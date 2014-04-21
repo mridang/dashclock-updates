@@ -1,0 +1,8 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res/com.mridang.netbank" >
+
+    <PreferenceCategory
+        android:key="exclude"
+        android:title="@string/exclude" />
+
+</PreferenceScreen>

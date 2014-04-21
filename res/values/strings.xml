@@ -1,0 +1,9 @@
+<resources>
+
+    <string name="extension_name">Updates</string>
+    <string name="application_name">Dashclock Updates Extension</string>
+    <string name="extension_info">Displays information about the device\'s application updates.</string>
+    <string name="preferences_title">Updates Extension Settings</string>
+    <string name="exclude">Exclude</string>
+
+</resources>
