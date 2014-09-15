@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
+import org.acra.ACRA;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.http.Header;
@@ -30,7 +31,6 @@ import android.provider.Settings;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
-import com.bugsense.trace.BugSenseHandler;
 import com.google.android.apps.dashclock.api.DashClockExtension;
 import com.google.android.apps.dashclock.api.ExtensionData;
 import com.loopj.android.http.AsyncHttpClient;
@@ -59,10 +59,12 @@ public class UpdatesWidget extends DashClockExtension {
 	AsyncHttpClient ascClient = new AsyncHttpClient();
 
 	/*
-	 * @see com.google.android.apps.dashclock.api.DashClockExtension#onInitialize(boolean)
+	 * @see
+	 * com.google.android.apps.dashclock.api.DashClockExtension#onInitialize
+	 * (boolean)
 	 */
 	@Override
-	protected void onInitialize(boolean isReconnect) {
+	protected void onInitialize(boolean booReconnect) {
 
 		Log.d("UpdatesWidget", "Initializing");
 
@@ -94,7 +96,8 @@ public class UpdatesWidget extends DashClockExtension {
 
 			SharedPreferences speSettings = PreferenceManager.getDefaultSharedPreferences(this);
 			final Editor ediSettings = speSettings.edit();
-			Integer intFlags = PackageManager.GET_META_DATA | PackageManager.GET_SHARED_LIBRARY_FILES | PackageManager.GET_SIGNATURES;
+			Integer intFlags = PackageManager.GET_META_DATA | PackageManager.GET_SHARED_LIBRARY_FILES
+					| PackageManager.GET_SIGNATURES;
 			for (PackageInfo pkgPackage : getApplicationContext().getPackageManager().getInstalledPackages(intFlags)) {
 
 				String strPackage = pkgPackage.applicationInfo.loadLabel(getPackageManager()).toString();
@@ -127,10 +130,10 @@ public class UpdatesWidget extends DashClockExtension {
 					jsoPackage.put("cert_sig", strCert);
 					jsoPackage.put("apk_sha1", strSha1);
 					jsoRequest.getJSONArray("apps").put(jsoPackage);
-					
+
 					mapVersions.put(pkgPackage.packageName, pkgPackage.versionCode);
 					mapPackages.put(pkgPackage.packageName, strPackage);
-					
+
 					if (speSettings.getBoolean(strSha1, false)) {
 						Log.d("UpdatesWidget", "Skipping reported package " + strPackage);
 						continue;
@@ -161,35 +164,34 @@ public class UpdatesWidget extends DashClockExtension {
 
 				Log.d("UpdatesWidget", "Sending the details of the installed packages");
 				String strServer = "http://dashclock-updates.appspot.com";
-				String strUrl = String.format("%s/%s/%s/%s/", strServer, uidUniqid.toString().replace("-", ""), Build.VERSION.SDK_INT, Build.DEVICE);
+				String strUrl = String.format("%s/%s/%s/%s/", strServer, uidUniqid.toString().replace("-", ""),
+						Build.VERSION.SDK_INT, Build.DEVICE);
 				Log.v("UpdatesWidget", strUrl);
 				Log.v("UpdatesWidget", jsoUpdates.toString(2));
-				ascClient.post(getApplicationContext(), 
-						strUrl, 
-						new StringEntity(jsoUpdates.toString(), "UTF-8"), "application/json",
-						new AsyncHttpResponseHandler() {
-	
-					@Override
-					public void onSuccess(String strResponse) {
-						ediSettings.commit();
-						Log.d("UpdatesWidget", "Successfully sent the details");
-					}
-	
-					@Override
-					public void onFailure(int intCode, Header[] arrHeaders, byte[] arrBytes, Throwable errError) {
-						Log.w("UpdatesWidget", "Error posting the details due to code " + intCode);
-					}
-	
-				});
-				
+				ascClient.post(getApplicationContext(), strUrl, new StringEntity(jsoUpdates.toString(), "UTF-8"),
+						"application/json", new AsyncHttpResponseHandler() {
+
+							@Override
+							public void onSuccess(String strResponse) {
+								ediSettings.commit();
+								Log.d("UpdatesWidget", "Successfully sent the details");
+							}
+
+							@Override
+							public void onFailure(int intCode, Header[] arrHeaders, byte[] arrBytes, Throwable errError) {
+								Log.w("UpdatesWidget", "Error posting the details due to code " + intCode);
+							}
+
+						});
+
 			}
 
 		} catch (Exception e) {
 			Log.e("UpdatesWidget", "Unable to fetch the list of packages", e);
-			BugSenseHandler.sendException(e);
+			ACRA.getErrorReporter().handleSilentException(e);
 		}
 
-		super.onInitialize(isReconnect);
+		super.onInitialize(booReconnect);
 
 	}
 
@@ -200,7 +202,7 @@ public class UpdatesWidget extends DashClockExtension {
 
 		super.onCreate();
 		Log.d("UpdatesWidget", "Created");
-		BugSenseHandler.initAndStartSession(this, getString(R.string.bugsense));
+		ACRA.init(new AcraApplication(getApplicationContext()));
 
 	}
 
@@ -217,72 +219,71 @@ public class UpdatesWidget extends DashClockExtension {
 
 		try {
 
-			if (strStatus.isEmpty() || (intReason == DashClockExtension.UPDATE_REASON_PERIODIC || intReason == DashClockExtension.UPDATE_REASON_SETTINGS_CHANGED)) {
+			if (strStatus.isEmpty()
+					|| (intReason == DashClockExtension.UPDATE_REASON_PERIODIC || intReason == DashClockExtension.UPDATE_REASON_SETTINGS_CHANGED)) {
 
 				Log.d("UpdatesWidget", "Getting the updates of the installed packages");
 				ascClient.setTimeout(60000);
 				ascClient.setMaxRetriesAndTimeout(3, 60000);
-				ascClient.post(getApplicationContext(), 
-						"http://goddchen.de/android/appupdate_crowd/siteground/versions.php", 
-						new StringEntity(jsoRequest.toString(), "UTF-8"), "application/json",
-						new AsyncHttpResponseHandler() {
+				ascClient.post(getApplicationContext(),
+						"http://goddchen.de/android/appupdate_crowd/siteground/versions.php", new StringEntity(
+								jsoRequest.toString(), "UTF-8"), "application/json", new AsyncHttpResponseHandler() {
 
-					@Override
-					public void onSuccess(String strResponse) {
+							@Override
+							public void onSuccess(String strResponse) {
 
-						try {
+								try {
 
-							BugSenseHandler.addCrashExtraData("Response", strResponse);
+									Log.v("UpdatesWidget", "Server reponded with: " + strResponse);
+									if (!strResponse.trim().isEmpty()) {
 
-							Log.v("UpdatesWidget", "Server reponded with: " + strResponse);
-							if (!strResponse.trim().isEmpty()) {
+										JSONArray jsoResponse = new JSONArray(strResponse);
+										Integer intUpdates = 0;
+										String strPackages = "";
 
-								JSONArray jsoResponse = new JSONArray(strResponse);
-								Integer intUpdates = 0;
-								String strPackages = "";
-								BugSenseHandler.sendEvent("Successful Request");
+										Log.d("UpdatesWidget", "Checking which packages have newer versions");
+										for (Integer intI = 0; intI < jsoResponse.length(); intI++) {
 
-								Log.d("UpdatesWidget", "Checking which packages have newer versions");
-								for (Integer intI = 0; intI < jsoResponse.length(); intI++) {
+											JSONObject jsoPackage = jsoResponse.getJSONObject(intI);
+											JSONArray jsoVersions = jsoPackage.getJSONArray("by_android_version");
+											for (Integer intJ = 0; intJ < jsoVersions.length(); intJ++) {
 
-									JSONObject jsoPackage = jsoResponse.getJSONObject(intI);
-									JSONArray jsoVersions = jsoPackage.getJSONArray("by_android_version");
-									for (Integer intJ = 0; intJ < jsoVersions.length(); intJ++) {
+												Integer intVersion = jsoVersions.getJSONObject(intJ).getInt("vcode");
+												if (intVersion > mapVersions.get(jsoPackage.get("pname"))) {
 
-										Integer intVersion = jsoVersions.getJSONObject(intJ).getInt("vcode");
-										if (intVersion > mapVersions.get(jsoPackage.get("pname"))) {
+													String strPackage = mapPackages.get(jsoPackage.get("pname"));
+													Log.d("UpdatesWidget",
+															strPackage != null ? strPackage : jsoPackage
+																	.getString("pname"));
+													intUpdates = intUpdates + 1;
+													strPackages = strPackages + (strPackages.length() > 0 ? ", " : "")
+															+ strPackage;
+													break;
 
-											String strPackage = mapPackages.get(jsoPackage.get("pname"));
-											Log.d("UpdatesWidget", strPackage != null ? strPackage : jsoPackage.getString("pname"));
-											intUpdates = intUpdates + 1;
-											strPackages = strPackages + (strPackages.length() > 0 ?", " : "") + strPackage;
-											break;
+												}
 
-										}									
+											}
+
+										}
+
+										if (intUpdates > 0) {
+											strStatus = intUpdates.toString();
+											strTitle = getResources().getQuantityString(R.plurals.updates, intUpdates,
+													intUpdates);
+											strMessage = strPackages;
+										}
 
 									}
 
-								}
-
-								if (intUpdates > 0) {
-									strStatus = intUpdates.toString();
-									strTitle = getResources().getQuantityString(R.plurals.updates, intUpdates, intUpdates);
-									strMessage = strPackages;
+								} catch (Exception e) {
+									edtInformation.visible(false);
+									Log.e("UpdatesWidget", "Encountered an error", e);
+									ACRA.getErrorReporter().handleSilentException(e);
 								}
 
 							}
 
-						} catch (Exception e) {
-							edtInformation.visible(false);
-							Log.e("UpdatesWidget", "Encountered an error", e);
-							BugSenseHandler.sendException(e);
-						} finally {
-							BugSenseHandler.clearCrashExtraData();
-						}
-
-					}
-
-				});
+						});
 
 			}
 
@@ -297,7 +298,7 @@ public class UpdatesWidget extends DashClockExtension {
 
 			}
 
-			if (new Random().nextInt(5) == 0) {
+			if (new Random().nextInt(5) == 0 && !(0 != (getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE))) {
 
 				PackageManager mgrPackages = getApplicationContext().getPackageManager();
 
@@ -314,16 +315,20 @@ public class UpdatesWidget extends DashClockExtension {
 					for (ResolveInfo info : mgrPackages.queryIntentServices(ittFilter, 0)) {
 
 						strPackage = info.serviceInfo.applicationInfo.packageName;
-						intExtensions = intExtensions + (strPackage.startsWith("com.mridang.") ? 1 : 0); 
+						intExtensions = intExtensions + (strPackage.startsWith("com.mridang.") ? 1 : 0);
 
 					}
 
 					if (intExtensions > 1) {
 
 						edtInformation.visible(true);
-						edtInformation.clickIntent(new Intent(Intent.ACTION_VIEW).setData(Uri.parse("market://details?id=com.mridang.donate")));
+						edtInformation.clickIntent(new Intent(Intent.ACTION_VIEW).setData(Uri
+								.parse("market://details?id=com.mridang.donate")));
 						edtInformation.expandedTitle("Please consider a one time purchase to unlock.");
-						edtInformation.expandedBody("Thank you for using " + intExtensions + " extensions of mine. Click this to make a one-time purchase or use just one extension to make this disappear.");
+						edtInformation
+								.expandedBody("Thank you for using "
+										+ intExtensions
+										+ " extensions of mine. Click this to make a one-time purchase or use just one extension to make this disappear.");
 						setUpdateWhenScreenOn(true);
 
 					}
@@ -337,7 +342,7 @@ public class UpdatesWidget extends DashClockExtension {
 		} catch (Exception e) {
 			edtInformation.visible(false);
 			Log.e("UpdatesWidget", "Encountered an error", e);
-			BugSenseHandler.sendException(e);
+			ACRA.getErrorReporter().handleSilentException(e);
 		}
 
 		edtInformation.icon(R.drawable.ic_dashclock);
@@ -353,7 +358,6 @@ public class UpdatesWidget extends DashClockExtension {
 
 		super.onDestroy();
 		Log.d("UpdatesWidget", "Destroyed");
-		BugSenseHandler.closeSession(this);
 
 	}
 

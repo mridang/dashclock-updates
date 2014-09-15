@@ -13,7 +13,6 @@ import android.preference.PreferenceManager;
 /*
  * This class is the activity which contains the preferences
  */
-@SuppressWarnings("deprecation")
 public class WidgetSettings extends PreferenceActivity {
 
 	/*
@@ -39,7 +38,8 @@ public class WidgetSettings extends PreferenceActivity {
 
 		SharedPreferences speSettings = PreferenceManager.getDefaultSharedPreferences(this);
 		PreferenceCategory catExclude = (PreferenceCategory) findPreference("exclude");
-		Integer intFlags = PackageManager.GET_META_DATA | PackageManager.GET_SHARED_LIBRARY_FILES | PackageManager.GET_SIGNATURES;
+		Integer intFlags = PackageManager.GET_META_DATA | PackageManager.GET_SHARED_LIBRARY_FILES
+				| PackageManager.GET_SIGNATURES;
 		for (PackageInfo pkgPackage : getApplicationContext().getPackageManager().getInstalledPackages(intFlags)) {
 
 			if ((pkgPackage.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) == 1) {
