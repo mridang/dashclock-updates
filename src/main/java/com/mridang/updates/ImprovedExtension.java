@@ -94,8 +94,10 @@ public abstract class ImprovedExtension extends DashClockExtension {
 
         }
 
-        removeAllWatchContentUris();
-        super.onDestroy();
+		if (getUris() != null) {
+			removeAllWatchContentUris();
+		}
+		super.onDestroy();
         Log.d(getTag(), "Destroyed");
 
     }
